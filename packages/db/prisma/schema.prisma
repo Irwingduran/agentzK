@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TransactionType {
+  credit_purchase
+  credit_deduction
+  x402_payment
+  bill_payment
+  investment
+}
+
+enum TransactionStatus {
+  pending
+  executing
+  completed
+  failed
+  cancelled
+}
+
+enum Currency {
+  credits
+  MXM
+  MXN
+  XLM
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  telegramId      String?  @unique
+  credits         Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  agents          Agent[]
+  wallets         Wallet[]
+  creditBalance   CreditBalance?
+  transactions    Transaction[]
+  spendingRules   SpendingRule[]
+}
+
+model Agent {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  walletAddress   String?
+  networkId       String   @default("stellar-testnet")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet          Wallet?  @relation("AgentWallet")
+  transactions    Transaction[]
+
+  @@index([userId])
+}
+
+model Wallet {
+  id              String   @id @default(cuid())
+  userId          String
+  agentId         String?  @unique
+  address         String   @unique
+  networkId       String   @default("stellar-testnet")
+  walletType      String   @default("agentic")
+  encryptedJson   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent           Agent?   @relation("AgentWallet", fields: [agentId], references: [id])
+
+  @@index([userId])
+}
+
+model CreditBalance {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  available       Int      @default(0)
+  reserved        Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  userId          String
+  agentId         String?
+  type            TransactionType
+  status          TransactionStatus @default(pending)
+  amount          Float
+  currency        Currency          @default(credits)
+  description     String
+  externalRef     String?
+  txHash          String?
+  metadata        Json?
+  errorMessage    String?
+  createdAt       DateTime          @default(now())
+  completedAt     DateTime?
+  failedAt        DateTime?
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent           Agent?            @relation(fields: [agentId], references: [id])
+
+  @@index([userId])
+  @@index([agentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SpendingRule {
+  id                    String   @id @default(cuid())
+  userId                String
+  agentId               String?
+  service               String
+  maxAmount             Float
+  requiresConfirmation  Boolean  @default(false)
+  confirmationThreshold Float?
+  scheduleType          String?
+  scheduleDay           Int?
+  scheduleTime          String?
+  enabled               Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([agentId])
+}
+
+

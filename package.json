@@ -1,0 +1,33 @@
+{
+  "name": "open402",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.15.1",
+  "scripts": {
+    "build": "pnpm -r --filter='./packages/*' run build",
+    "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
+    "typecheck": "pnpm -r --filter='./packages/*' run typecheck",
+    "db:generate": "pnpm --filter @open402/db run generate",
+    "db:push": "pnpm --filter @open402/db run push",
+    "db:studio": "pnpm --filter @open402/db run studio",
+    "dev:web": "pnpm --filter @open402/web dev",
+    "dev:bot": "pnpm --filter @open402/bot dev",
+    "dev:all": "pnpm run dev:web & pnpm run dev:bot & wait"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "esbuild",
+      "@clerk/shared",
+      "bigint-buffer",
+      "bufferutil",
+      "secp256k1",
+      "utf-8-validate"
+    ]
+  }
+}
