@@ -1,0 +1,8 @@
+spending_limit = "1000"
+window_id = "20260701"
+old_commitment = "0x2424e4a32d2cdaef486afdec5de4e322e162f55b1883ed90d8dec06ee28f5db6"
+new_commitment = "0x13b6e42316d6b1291f769465fddabbb61bfd1691b1eb33fd5404b34fbb462630"
+old_accumulated = "0"
+old_nonce = "12345"
+amount = "312"
+new_nonce = "67890"
