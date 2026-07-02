@@ -1,6 +1,7 @@
 node_modules/
 .next/
 dist/
+docs/
 .env
 .env.local
 *.log
@@ -11,3 +12,7 @@ PROJECT.md
 web-dashboard-design.zip
 *.tsbuildinfo
 .vercel
+
+# Rust / build artifacts
+target/
+circuits/**/target/
