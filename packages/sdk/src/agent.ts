@@ -15,6 +15,12 @@ import { PolicyEngine } from './policy-engine';
 import { AgentWallet } from './wallet';
 import { BillPaymentHandler } from './payments/bill-payment';
 import { X402PaymentHandler } from './payments/x402';
+import { ZKX402PaymentHandler } from './payments/zk-x402';
+import type { ZKPolicyEngine } from './zk-policy-engine';
+
+interface X402Handler {
+  pay(request: X402PaymentRequest): Promise<X402PaymentResult>;
+}
 
 export class Agent {
   readonly id: string;
@@ -24,14 +30,16 @@ export class Agent {
 
   private client: ApiClient;
   private billPayments: BillPaymentHandler;
-  private x402Payments: X402PaymentHandler;
+  private x402Payments: X402Handler;
+  private zkEngine?: ZKPolicyEngine;
 
   constructor(
     id: string,
     name: string,
     wallet: AgentWallet,
     policies: SpendingRule[],
-    client: ApiClient
+    client: ApiClient,
+    zkEngine?: ZKPolicyEngine,
   ) {
     this.id = id;
     this.name = name;
@@ -39,7 +47,12 @@ export class Agent {
     this.policies = new PolicyEngine(policies);
     this.client = client;
     this.billPayments = new BillPaymentHandler(client, id);
-    this.x402Payments = new X402PaymentHandler(wallet);
+    this.zkEngine = zkEngine;
+    if (zkEngine) {
+      this.x402Payments = new ZKX402PaymentHandler(wallet, zkEngine);
+    } else {
+      this.x402Payments = new X402PaymentHandler(wallet);
+    }
   }
 
   async payBill(request: BillPaymentRequest): Promise<BillPaymentResult> {
@@ -52,8 +65,10 @@ export class Agent {
   }
 
   async payX402(request: X402PaymentRequest): Promise<X402PaymentResult> {
-    const decision = this.policies.evaluate('x402', 0);
-    if (!decision.allowed) {
+    const decision = this.zkEngine
+      ? undefined
+      : this.policies.evaluate('x402', 0);
+    if (decision && !decision.allowed) {
       throw new PolicyError(decision.reason, decision.requiresConfirmation);
     }
 
